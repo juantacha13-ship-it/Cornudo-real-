@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#6A1B9A">
+<title>CuernoReal — Fotos y Roleplay</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f3f7;color:#211b25;font-family:Arial,sans-serif}
+header{background:#6A1B9A;color:#fff;padding:18px 16px;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:25px}header p{margin:4px 0 0;opacity:.88}
+main{max-width:720px;margin:auto;padding:14px 12px 90px}.card{background:#fff;border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 2px 10px #0001}
+button{border:0;border-radius:12px;padding:11px 14px;font-weight:bold;cursor:pointer}
+.primary{background:#6A1B9A;color:#fff}.soft{background:#eee5f2;color:#6A1B9A}
+textarea,input{width:100%;border:1px solid #ddd;border-radius:13px;padding:12px;font-size:16px}
+textarea{min-height:110px;resize:vertical}.tag{display:inline-block;background:#eee5f2;color:#6A1B9A;border-radius:20px;padding:6px 10px;font-size:12px}
+.post{font-size:17px;line-height:1.45;margin:12px 0}.meta{font-size:12px;color:#777}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}.photo-grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px}
+.bot{display:flex;gap:12px;align-items:center}.avatar{width:52px;height:52px;border-radius:50%;background:#eee5f2;display:grid;place-items:center;font-size:25px}
+.chat{height:380px;overflow:auto;background:#f7f5f8;border-radius:14px;padding:12px;margin:12px 0}
+.msg{max-width:82%;padding:10px 12px;border-radius:14px;margin:8px 0;line-height:1.35}.botmsg{background:#fff}.usermsg{background:#6A1B9A;color:#fff;margin-left:auto}
+.row{display:flex;gap:8px}.row input{flex:1}nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:flex;justify-content:space-around;padding:10px;z-index:10}nav button{background:none;color:#666}nav .active{color:#6A1B9A}
+.note{font-size:12px;color:#777;line-height:1.4}.hidden{display:none}.botlist{display:grid;gap:10px}
+</style>
+</head>
+<body>
+<header><h1>CuernoReal</h1><p>Confesiones · Fotos · Roleplay</p></header>
+
+<main>
+<section id="inicio">
+  <div class="card">
+    <span class="tag">Anónimo</span>
+    <div class="post">Bienvenido. Esta versión ya permite seleccionar fotos desde tu teléfono y probar conversaciones de roleplay.</div>
+    <div class="meta">Contenido de demostración</div>
+  </div>
+  <div id="posts"></div>
+</section>
+
+<section id="publicar" class="hidden">
+  <div class="card">
+    <h2>Nueva publicación</h2>
+    <textarea id="texto" maxlength="1500" placeholder="Escribe tu confesión..."></textarea>
+    <br><br>
+    <label><b>📷 Subir fotos</b></label>
+    <input id="fotos" type="file" accept="image/*" multiple onchange="previewPhotos()">
+    <div id="preview" class="photo-grid"></div>
+    <p class="note">Selecciona una o varias fotos directamente desde la galería de tu teléfono. No se abrirá la cámara. Para que otros usuarios puedan verlas necesitamos conectar almacenamiento en la nube y una base de datos.</p>
+    <button class="primary" style="width:100%" onclick="publicar()">Publicar</button>
+  </div>
+</section>
+
+<section id="bots" class="hidden">
+  <div class="card">
+    <h2>🤖 Bots de roleplay</h2>
+    <p class="note">Personajes para conversaciones ficticias. Esta demo usa respuestas locales; una IA real requiere conectar un servidor/API.</p>
+    <div class="botlist">
+      <button class="soft" onclick="abrirBot('El Corneador','😈','Atrevido, seguro y provocador')">😈 El Corneador — Atrevido</button>
+      <button class="soft" onclick="abrirBot('El Seductor','🔥','Coqueto, seguro y especialista en tensión')">🔥 El Seductor — Coqueto</button>
+      <button class="soft" onclick="abrirBot('El Casanova','🖤','Elegante, confiado y persistente')">🖤 El Casanova — Elegante</button>
+      <button class="soft" onclick="abrirBot('El Intruso','🎭','Misterioso, bromista y provocador')">🎭 El Intruso — Misterioso</button>
+      <button class="soft" onclick="abrirBot('La Corneadora','💋','Coqueta, atrevida y juguetona')">💋 La Corneadora — Atrevida</button>
+      <button class="soft" onclick="abrirBot('La Seductora','✨','Romántica, segura y provocadora')">✨ La Seductora — Seductora</button>
+      <button class="soft" onclick="abrirBot('El Corneador Maduro','🥂','Tranquilo, experimentado y seguro')">🥂 El Corneador Maduro</button>
+    </div>
+  </div>
+  <div id="chatbox" class="card hidden">
+    <div class="bot"><div id="avatar" class="avatar">🤖</div><div><b id="botname">Bot</b><div id="botdesc" class="meta"></div></div></div>
+    <div id="chat" class="chat"></div>
+    <div class="row"><input id="mensaje" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter')enviar()"><button class="primary" onclick="enviar()">Enviar</button></div>
+    <br>
+    <label><b>📷 Enviar foto al bot</b></label>
+    <input id="botPhotos" type="file" accept="image/*" multiple onchange="previewBotPhotos()">
+    <div id="botPhotoPreview" class="photo-grid"></div>
+    <button class="soft" style="margin-top:10px" onclick="sendBotPhotos()">Enviar fotos</button>
+  </div>
+</section>
+
+
+<section id="privados" class="hidden">
+  <div class="card">
+    <h2>💬 Chats privados</h2>
+    <div class="bot"><div class="avatar">👤</div><div><b>Conversación privada</b><div class="meta">Fotos y mensajes</div></div></div>
+    <div id="privateChat" class="chat"></div>
+    <div class="row">
+      <input id="privateMsg" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter')sendPrivate()">
+      <button class="primary" onclick="sendPrivate()">Enviar</button>
+    </div>
+    <br>
+    <label><b>📷 Enviar fotos desde la galería</b></label>
+    <input id="privatePhotos" type="file" accept="image/*" multiple onchange="previewPrivatePhotos()">
+    <div id="privatePreview" class="photo-grid"></div>
+    <button class="soft" style="margin-top:10px" onclick="sendPrivatePhotos()">Enviar fotos</button>
+  </div>
+</section>
+
+<section id="perfil" class="hidden">
+  <div class="card">
+    <h2>👤 Mi perfil</h2>
+    <input id="profileName" placeholder="Nombre o alias">
+    <br><br>
+    <label><b>Fotos de perfil</b></label>
+    <input id="profilePhotos" type="file" accept="image/*" multiple onchange="previewProfilePhotos()">
+    <div id="profilePreview" class="photo-grid"></div>
+    <button class="primary" style="width:100%;margin-top:12px" onclick="saveProfile()">Guardar perfil</button>
+    <p class="note">Las fotos se seleccionan desde la galería. Para compartirlas entre usuarios necesitamos almacenamiento en la nube.</p>
+  </div>
+</section>
+
+<section id="info" class="hidden">
+<div class="card"><h2>Sobre esta versión</h2>
+<p>Incluye selección y vista previa de fotografías, publicaciones y bots de roleplay de demostración.</p>
+<p class="note"><b>Importante:</b> las fotos todavía no se suben a un servidor y los bots todavía no usan un modelo de IA real. Para producción hay que añadir autenticación, almacenamiento de imágenes, base de datos, moderación y un backend que proteja la clave de la IA.</p>
+</div>
+</section>
+</main>
+
+<nav>
+<button class="active" onclick="show('inicio',this)">🏠 Inicio</button>
+<button onclick="show('publicar',this)">📷 Publicar</button>
+<button onclick="show('bots',this)">🤖 Bots</button>
+<button onclick="show('privados',this)">💬 Privados</button>
+<button onclick="show('perfil',this)">👤 Perfil</button>
+<button onclick="show('info',this)">ℹ️ Info</button>
+</nav>
+
+<script>
+let selectedBot={name:'',style:'',emoji:'🤖'};
+function show(id,btn){['inicio','publicar','bots','privados','perfil','info'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id));document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));btn.classList.add('active')}
+function previewPhotos(){const box=document.getElementById('preview');box.innerHTML='';[...document.getElementById('fotos').files].forEach(f=>{const img=document.createElement('img');img.src=URL.createObjectURL(f);box.appendChild(img)})}
+function publicar(){let t=document.getElementById('texto').value.trim();let files=[...document.getElementById('fotos').files];if(!t&&!files.length){alert('Escribe algo o selecciona una foto.');return}let c=document.createElement('div');c.className='card';c.innerHTML='<span class="tag">Anónimo</span><div class="post"></div><div class="photo-grid"></div><div class="meta">Publicado ahora</div>';c.querySelector('.post').textContent=t;let g=c.querySelector('.photo-grid');files.forEach(f=>{let img=document.createElement('img');img.src=URL.createObjectURL(f);g.appendChild(img)});document.getElementById('posts').prepend(c);document.getElementById('texto').value='';document.getElementById('fotos').value='';document.getElementById('preview').innerHTML='';show('inicio',document.querySelector('nav button'))}
+function abrirBot(name,emoji,desc){selectedBot={name,emoji,style:desc};document.getElementById('chatbox').classList.remove('hidden');document.getElementById('avatar').textContent=emoji;document.getElementById('botname').textContent=name;document.getElementById('botdesc').textContent=desc;document.getElementById('chat').innerHTML='<div class="msg botmsg">'+emoji+' Hola, soy '+name+'. Me gusta el coqueteo y las historias con tensión romántica. Tú marcas el ritmo 😉</div>'}
+function enviar(){let input=document.getElementById('mensaje'),t=input.value.trim();if(!t)return;let chat=document.getElementById('chat');chat.innerHTML+='<div class="msg usermsg"></div>';chat.lastChild.textContent=t;input.value='';let replies=[
+  'Mmm… eso suena interesante 😉. Me acerco un poco más y te miro con una sonrisa. ¿Qué haces ahora?',
+  'Vaya, vienes con mucha confianza 😏. Me gusta ese lado atrevido. Continúa la escena…',
+  'Eso cambia el ambiente por completo. 😌 La tensión aumenta y ninguno de los dos quiere apartarse. ¿Qué pasa después?',
+  'Me estás provocando a seguir la historia 😏. Hagámosla intensa y coqueta. ¿Cuál es tu siguiente movimiento?'
+];
+let r=replies[Math.floor(Math.random()*replies.length)];setTimeout(()=>{chat.innerHTML+='<div class="msg botmsg"></div>';chat.lastChild.textContent=selectedBot.emoji+' '+r;chat.scrollTop=chat.scrollHeight},350);chat.scrollTop=chat.scrollHeight}
+
+function previewPrivatePhotos(){
+  const box=document.getElementById('privatePreview'); box.innerHTML='';
+  [...document.getElementById('privatePhotos').files].forEach(f=>{
+    const img=document.createElement('img'); img.src=URL.createObjectURL(f); box.appendChild(img);
+  });
+}
+function sendPrivate(){
+  const input=document.getElementById('privateMsg'), t=input.value.trim(); if(!t)return;
+  const chat=document.getElementById('privateChat');
+  chat.innerHTML+='<div class="msg usermsg"></div>'; chat.lastChild.textContent=t; input.value='';
+  chat.scrollTop=chat.scrollHeight;
+}
+function sendPrivatePhotos(){
+  const files=[...document.getElementById('privatePhotos').files];
+  const chat=document.getElementById('privateChat');
+  if(!files.length){alert('Selecciona fotos de la galería.');return}
+  files.forEach(f=>{
+    const wrap=document.createElement('div'); wrap.className='msg usermsg';
+    const img=document.createElement('img'); img.src=URL.createObjectURL(f);
+    img.style.maxWidth='220px'; img.style.maxHeight='220px'; img.style.borderRadius='12px';
+    wrap.appendChild(img); chat.appendChild(wrap);
+  });
+  document.getElementById('privatePhotos').value=''; document.getElementById('privatePreview').innerHTML='';
+  chat.scrollTop=chat.scrollHeight;
+}
+function previewProfilePhotos(){
+  const box=document.getElementById('profilePreview'); box.innerHTML='';
+  [...document.getElementById('profilePhotos').files].forEach(f=>{
+    const img=document.createElement('img'); img.src=URL.createObjectURL(f); box.appendChild(img);
+  });
+}
+function saveProfile(){
+  const name=document.getElementById('profileName').value.trim()||'Anónimo';
+  alert('Perfil de '+name+' preparado. Las fotos se guardan localmente en esta demo.');
+}
+
+
+function previewBotPhotos(){
+  const box=document.getElementById('botPhotoPreview'); box.innerHTML='';
+  [...document.getElementById('botPhotos').files].forEach(f=>{
+    const img=document.createElement('img'); img.src=URL.createObjectURL(f); box.appendChild(img);
+  });
+}
+function sendBotPhotos(){
+  const files=[...document.getElementById('botPhotos').files];
+  const chat=document.getElementById('chat');
+  if(!files.length){alert('Selecciona una foto de la galería.');return}
+  files.forEach(f=>{
+    const wrap=document.createElement('div'); wrap.className='msg usermsg';
+    const img=document.createElement('img'); img.src=URL.createObjectURL(f);
+    img.style.maxWidth='220px'; img.style.maxHeight='220px'; img.style.borderRadius='12px';
+    wrap.appendChild(img); chat.appendChild(wrap);
+    setTimeout(()=>{
+      const reply=document.createElement('div'); reply.className='msg botmsg';
+      reply.textContent=selectedBot.emoji+' Recibí tu foto. En la versión conectada a IA podré analizarla y describir lo que aparece.';
+      chat.appendChild(reply); chat.scrollTop=chat.scrollHeight;
+    },400);
+  });
+  document.getElementById('botPhotos').value=''; document.getElementById('botPhotoPreview').innerHTML='';
+  chat.scrollTop=chat.scrollHeight;
+}
+
+</script>
+</body>
+</html>
